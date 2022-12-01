@@ -20,9 +20,10 @@ use({
 
 ## Usage
 
-This plugin provides three global VimL functions, to be used as `%@` click-handlers in your `'statuscolumn'` string. Namely `StcFold`, `StcSign` and `StcLnum`:
+This plugin provides four global VimL functions. `ScFa`, `ScSa` and `ScLa` are to be used as `%@` click-handlers for the fold, sign and line number segments in your `'statuscolumn'` string respectively.
+`ScLn` can be used as the line number itself inside a `%{}` eval segment, configurable through the [`setup()`](#Configuration) function.
 
-    vim.o.statuscolumn = "%@StcFold@%C%T%@StcSign@%s%T@StcLNum@%=%r"
+    vim.o.statuscolumn = "%@ScFa@%C%T%@ScLa@%s%T@ScNa@%=%{ScLn()}%T"
 
 ## Configuration
 
@@ -37,8 +38,8 @@ Currently the following builtin actions are supported:
 |Lnum|Left||Toggle [DAP](https://github.com/mfussenegger/nvim-dap) breakpoint|
 |Lnum|Left|<kbd>Ctrl</kbd>|Toggle DAP conditional breakpoint|
 |Lnum|Middle||Yank line|
-|Lnum|Middle x2||Paste line|
-|Lnum|Right||Delete line|
+|Lnum|Right||Paste line|
+|Lnum|Right x2||Delete line|
 |FoldPlus|Left||Open fold|
 |FoldPlus|Left|<kbd>Ctrl</kbd>|Open fold recursively|
 |FoldMinus|Left||Close fold|
@@ -59,6 +60,10 @@ The `setup()` function accepts a table of functions. Each entry is the name of a
 ```lua
 local builtin = require("statuscol.builtin")
 local cfg = {
+  separator = false,     -- separator between line number and buffer text ("│" or extra " " padding)
+  thousands = false      -- or line number thousands separator string ("." / ",")
+  statuscolumn = false,  -- whether to set the 'statuscolumn', providing the builtin click actions
+  -- Click actions
   Lnum                   = builtin.lnum_click,
   FoldPlus               = builtin.foldplus_click,
   FoldMinus              = builtin.foldminus_click,

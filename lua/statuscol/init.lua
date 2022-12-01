@@ -1,12 +1,18 @@
 local a = vim.api
 local f = vim.fn
 local c = vim.cmd
+local o = vim.o
+local v = vim.v
 local S = vim.schedule
 local M = {}
 local signs = {}
 local builtin = require("statuscol.builtin")
 
 local cfg = {
+  separator = " ",
+  thousands = false,
+  statuscolumn = false,
+  -- Click actions
 	Lnum                   = builtin.lnum_click,
 	FoldPlus               = builtin.foldplus_click,
 	FoldMinus              = builtin.foldminus_click,
@@ -47,7 +53,7 @@ local function get_click_args(minwid, clicks, button, mods)
 	return args
 end
 
---- Run fold action
+--- Run fold column click callback
 function M.get_fold_action(minwid, clicks, button, mods)
 	local args = get_click_args(minwid, clicks, button, mods)
 	local type = f.screenstring(args.mousepos.screenrow, args.mousepos.screencol)
@@ -58,15 +64,7 @@ function M.get_fold_action(minwid, clicks, button, mods)
 	end
 end
 
---- Run line number action
-function M.get_lnum_action(minwid, clicks, button, mods)
-	local args = get_click_args(minwid, clicks, button, mods)
-	if (cfg.Lnum) then
-		S(function() cfg.Lnum(args) end)
-	end
-end
-
---- Run sign action
+--- Run sign column click callback
 function M.get_sign_action(minwid, clicks, button, mods)
 	local args = get_click_args(minwid, clicks, button, mods)
 	local sign = f.screenstring(args.mousepos.screenrow, args.mousepos.screencol)
@@ -83,20 +81,50 @@ function M.get_sign_action(minwid, clicks, button, mods)
 	end
 end
 
+--- Run line number click callback
+function M.get_lnum_action(minwid, clicks, button, mods)
+	local args = get_click_args(minwid, clicks, button, mods)
+	if (cfg.Lnum) then
+		S(function() cfg.Lnum(args) end)
+	end
+end
+
+function M.get_lnum_string()
+  if v.wrap or (not o.relativenumber and not o.number) then return "" end
+  local lnum = v.lnum
+
+  if o.relativenumber then
+    lnum = v.relnum > 0 and v.relnum or (o.number and lnum or 0)
+  end
+
+  if cfg.thousands and lnum > 999 then
+    lnum = string.reverse(lnum):gsub("%d%d%d", "%1"..cfg.thousands):reverse():gsub("^%"..cfg.thousands, "")
+  end
+
+  return lnum
+end
+
 function M.setup(setup_cfg)
 	if setup_cfg then cfg = vim.tbl_deep_extend("force", cfg, setup_cfg) end
 
 	c([[
-	function! StcFold(a, b, c, d)
-	call v:lua.require("statuscol").get_fold_action(a:a, a:b, a:c, a:d)
+	function! ScFa(a, b, c, d)
+	  call v:lua.require("statuscol").get_fold_action(a:a, a:b, a:c, a:d)
 	endfunction
-	function! StcSign(a, b, c, d)
-	call v:lua.require("statuscol").get_sign_action(a:a, a:b, a:c, a:d)
+	function! ScSa(a, b, c, d)
+	  call v:lua.require("statuscol").get_sign_action(a:a, a:b, a:c, a:d)
 	endfunction
-	function! StcLNum(a, b, c, d)
-	call v:lua.require("statuscol").get_lnum_action(a:a, a:b, a:c, a:d)
+	function! ScLa(a, b, c, d)
+	  call v:lua.require("statuscol").get_lnum_action(a:a, a:b, a:c, a:d)
 	endfunction
+  function! ScLn()
+    return v:lua.require("statuscol").get_lnum_string()
+  endfunction
 	]])
+
+  if cfg.statuscolumn then
+    o.statuscolumn = "%@ScFa@%C%T%@ScSa@%s%T%@ScLa@%=%{ScLn()}%T"..cfg.separator
+  end
 end
 
 return M

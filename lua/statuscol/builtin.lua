@@ -82,14 +82,12 @@ function M.lnum_click(args)
 		-- Toggle DAP (conditional) breakpoint on (Ctrl-)left click
 		M.toggle_breakpoint(args)
 	elseif args.button == "m" then
-		if args.clicks == 2 then
-			c("norm! p")   -- Paste on double middle click
-		else
-			c("norm! yy")  -- Yank/Delete on middle click
-		end
+		c("norm! yy")  -- Yank on middle click
 	elseif args.button == "r" then
 		if args.clicks == 2 then
 			c("norm! dd")  -- Cut on double right click
+    else
+			c("norm! p")   -- Paste on right click
 		end
 	end
 end
